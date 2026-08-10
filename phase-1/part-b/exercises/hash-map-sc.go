@@ -1,4 +1,4 @@
-// building a hash map from scratch
+// building a hash map from scratch via separate chaining method
 
 package main
 
@@ -177,6 +177,7 @@ func (m *HashMap) Delete(key string) {
 }
 
 func main() {
+	fmt.Println("------------------- Separate Chaining Method -------------------")
 	// 1. Initialize with a SMALL capacity to force a resize earlier
 	myMap := &HashMap{
 		buckets:  make([]*Node, 5),
@@ -220,4 +221,51 @@ func main() {
 	if allFound {
 		fmt.Println("All keys successfully migrated during resize!")
 	}
+
+	fmt.Println()
+	fmt.Println()
+	fmt.Println()
+
+	fmt.Println("------------------- Linear Probing Method -------------------")
+	// 1. Initialize with a very small capacity (4) 
+	// This makes it very easy to see collisions and trigger a resize.
+	atlas := &HashMap_OA{
+		buckets:  make([]Entry, 4),
+		capacity: 4,
+	}
+
+	fmt.Println("--- Phase 1: Basic Insertion & Collisions ---")
+	atlas.Put("alpha", 1)
+	atlas.Put("beta", 2)
+	atlas.Put("gamma", 3) 
+	// At this point, 3/4 is 75%. The next Put should trigger a resize.
+	atlas.DebugPrint()
+
+	fmt.Println("\n--- Phase 2: Deletion & Tombstones ---")
+	// Let's delete the middle item to create a tombstone
+	atlas.Delete("beta")
+	atlas.DebugPrint() 
+	
+	// Verify "gamma" is still reachable (this proves you can jump over tombstones)
+	val, found := atlas.Get("gamma")
+	fmt.Printf("Get 'gamma' after 'beta' deleted: Value=%d, Found=%v\n", val, found)
+
+	fmt.Println("\n--- Phase 3: Recycling Tombstones ---")
+	// If we put a new key, it should take the spot where "beta" used to be
+	atlas.Put("delta", 4)
+	atlas.DebugPrint()
+
+	fmt.Println("\n--- Phase 4: Forced Resize & Cleanup ---")
+	// Adding "omega" should definitely trigger a resize if it hasn't happened yet.
+	// Resize should remove all tombstones and double the capacity.
+	atlas.Put("omega", 5)
+	atlas.Put("epsilon", 6)
+	atlas.DebugPrint()
+
+	fmt.Println("\n--- Phase 5: Final Validation ---")
+	// Final check: Can we find the very first and very last items?
+	aVal, aFound := atlas.Get("alpha")
+	oVal, oFound := atlas.Get("omega")
+	fmt.Printf("Alpha: %d (Found: %v)\n", aVal, aFound)
+	fmt.Printf("Omega: %d (Found: %v)\n", oVal, oFound)
 }
